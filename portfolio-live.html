@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aman's Live Portfolio Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#080c10; --surface:#0d1318; --card:#111820; --border:#1e2d3d;
+    --accent:#00d4ff; --accent2:#ff6b35; --green:#00e676; --red:#ff3d57;
+    --yellow:#ffd740; --text:#e8f4ff; --muted:#4a6278; --dim:#2a3d50;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .wrap{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:20px 16px;}
+
+  /* HEADER */
+  .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+  .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;letter-spacing:-1px;}
+  .logo span{color:var(--accent);}
+  .live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;margin-right:6px;}
+  @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,230,118,0.4);}50%{opacity:.7;box-shadow:0 0 0 6px rgba(0,230,118,0);}}
+  .badge{background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);padding:4px 12px;border-radius:20px;font-size:0.68rem;color:var(--accent);letter-spacing:1px;text-transform:uppercase;}
+  .last-sync{font-size:0.62rem;color:var(--muted);margin-top:3px;}
+
+  /* TOKEN SETUP */
+  .setup-panel{background:var(--card);border:1px solid var(--yellow);border-radius:16px;padding:24px;margin-bottom:24px;display:none;}
+  .setup-panel.show{display:block;}
+  .setup-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--yellow);margin-bottom:12px;}
+  .setup-row{display:flex;gap:10px;align-items:center;}
+  .setup-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.75rem;padding:10px 14px;outline:none;}
+  .setup-input:focus{border-color:var(--accent);}
+
+  /* SUMMARY */
+  .summary-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px;}
+  .sum-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;position:relative;overflow:hidden;}
+  .sum-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+  .sum-card.c-blue::before{background:var(--accent);}
+  .sum-card.c-yellow::before{background:var(--yellow);}
+  .sum-card.c-green::before{background:var(--green);}
+  .sum-card.c-red::before{background:var(--red);}
+  .sum-card.c-muted::before{background:var(--muted);}
+  .sum-label{font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
+  .sum-value{font-family:'Syne',sans-serif;font-size:1.25rem;font-weight:700;}
+  .sum-sub{font-size:0.62rem;color:var(--muted);margin-top:3px;}
+  .pos{color:var(--green);} .neg{color:var(--red);} .neu{color:var(--muted);}
+
+  /* TABS */
+  .tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+  .tab{padding:7px 18px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.72rem;cursor:pointer;transition:all .2s;text-transform:uppercase;letter-spacing:1px;}
+  .tab.active{background:rgba(0,212,255,0.1);border-color:var(--accent);color:var(--accent);}
+  .tab:hover:not(.active){border-color:var(--dim);color:var(--text);}
+  .tab-content{display:none;} .tab-content.active{display:block;}
+
+  /* TABLE */
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:0.72rem;}
+  thead tr{border-bottom:1px solid var(--border);}
+  th{padding:9px 10px;text-align:left;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-size:0.62rem;font-weight:400;white-space:nowrap;}
+  tbody tr{border-bottom:1px solid rgba(30,45,61,0.5);transition:background .15s;cursor:pointer;}
+  tbody tr:hover{background:rgba(0,212,255,0.04);}
+  td{padding:10px;white-space:nowrap;}
+  .scrip-name{font-family:'Syne',sans-serif;font-size:0.78rem;font-weight:600;}
+  .scrip-sub{color:var(--muted);font-size:0.6rem;margin-top:2px;}
+  .tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.6rem;letter-spacing:.5px;text-transform:uppercase;}
+  .tag.eq{background:rgba(0,212,255,0.1);color:var(--accent);border:1px solid rgba(0,212,255,0.2);}
+  .tag.mf{background:rgba(255,215,64,0.1);color:var(--yellow);border:1px solid rgba(255,215,64,0.2);}
+  .tag.etf{background:rgba(255,107,53,0.1);color:var(--accent2);border:1px solid rgba(255,107,53,0.2);}
+  .verdict-buy{color:var(--green);font-weight:600;}
+  .verdict-hold{color:var(--yellow);}
+  .verdict-exit{color:var(--red);font-weight:600;}
+  .verdict-caution{color:var(--accent2);}
+  .price-live{font-weight:600;}
+  .chg-pos{color:var(--green);}
+  .chg-neg{color:var(--red);}
+
+  /* ALERT BANNER */
+  .alerts-wrap{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+  .alert-item{background:var(--card);border-left:3px solid var(--accent);border-radius:8px;padding:10px 14px;font-size:0.72rem;display:flex;align-items:center;gap:10px;}
+  .alert-item.alert-buy{border-color:var(--green);}
+  .alert-item.alert-sell{border-color:var(--red);}
+  .alert-item.alert-watch{border-color:var(--yellow);}
+  .alert-icon{font-size:1rem;}
+
+  /* PRICE INPUT */
+  .price-input{background:var(--surface);border:1px solid var(--dim);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.72rem;padding:5px 8px;width:80px;outline:none;}
+  .price-input:focus{border-color:var(--accent);}
+
+  /* BUTTONS */
+  .btn{padding:9px 18px;border-radius:10px;border:none;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:0.78rem;transition:all .2s;}
+  .btn-primary{background:var(--accent);color:var(--bg);}
+  .btn-primary:hover{background:#33ddff;transform:translateY(-1px);}
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+  .btn-sm{padding:4px 10px;font-size:0.62rem;border-radius:5px;border:none;cursor:pointer;font-family:'DM Mono',monospace;transition:all .2s;}
+  .btn-ask{background:rgba(0,212,255,0.1);color:var(--accent);border:1px solid rgba(0,212,255,0.25);}
+  .btn-ask:hover{background:rgba(0,212,255,0.2);}
+  .btn-refresh{background:rgba(0,230,118,0.1);color:var(--green);border:1px solid rgba(0,230,118,0.25);padding:6px 14px;border-radius:8px;font-size:0.7rem;cursor:pointer;font-family:'DM Mono',monospace;}
+  .btn-refresh:hover{background:rgba(0,230,118,0.2);}
+
+  /* AI PANEL */
+  .ai-panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;}
+  .ai-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .ai-title{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;}
+  .chat-history{max-height:380px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:14px;padding-right:4px;}
+  .chat-history::-webkit-scrollbar{width:4px;}
+  .chat-history::-webkit-scrollbar-thumb{background:var(--dim);border-radius:2px;}
+  .msg{max-width:85%;padding:11px 15px;border-radius:12px;font-size:0.76rem;line-height:1.65;}
+  .msg.user{background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);margin-left:auto;color:var(--accent);}
+  .msg.ai{background:var(--surface);border:1px solid var(--border);}
+  .chat-input-row{display:flex;gap:10px;}
+  .chat-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.76rem;padding:9px 13px;outline:none;}
+  .chat-input:focus{border-color:var(--accent);}
+  .quick-actions{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px;}
+  .qa-btn{padding:5px 13px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:0.66rem;cursor:pointer;transition:all .2s;font-family:'DM Mono',monospace;}
+  .qa-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* INTEL */
+  .intel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+  .intel-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;}
+  .intel-title{font-family:'Syne',sans-serif;font-size:0.8rem;font-weight:700;color:var(--accent);margin-bottom:10px;}
+  .intel-row{display:flex;justify-content:space-between;font-size:0.7rem;padding:4px 0;border-bottom:1px solid rgba(30,45,61,0.4);}
+  .intel-row:last-child{border:none;}
+
+  /* BAR CHART */
+  .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:0.68rem;}
+  .bar-label{width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .bar-track{flex:1;height:5px;background:var(--dim);border-radius:3px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:3px;transition:width .6s ease;}
+  .bar-pct{width:38px;text-align:right;color:var(--muted);}
+
+  .loader{display:inline-block;width:12px;height:12px;border:2px solid var(--dim);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .section-title{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+  .alloc-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;}
+  .alloc-title{font-family:'Syne',sans-serif;font-size:.8rem;font-weight:700;color:var(--accent);margin-bottom:12px;}
+  .morning-brief{background:linear-gradient(135deg,rgba(0,212,255,0.06),rgba(255,107,53,0.06));border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px;font-size:0.75rem;line-height:1.8;}
+  .morning-title{font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);font-size:.9rem;margin-bottom:8px;}
+
+  /* DAILY SIGNALS */
+  .signals-panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;font-size:0.76rem;line-height:1.9;}
+  .signals-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+  .sig-block{margin-bottom:18px;padding:14px;border-radius:10px;border:1px solid var(--border);}
+  .sig-buy{background:rgba(0,230,118,0.05);border-color:rgba(0,230,118,0.2);}
+  .sig-sell{background:rgba(255,61,87,0.05);border-color:rgba(255,61,87,0.2);}
+  .sig-watch{background:rgba(255,215,64,0.05);border-color:rgba(255,215,64,0.2);}
+  .sig-hold{background:rgba(74,98,120,0.08);border-color:rgba(74,98,120,0.2);}
+  .sig-actions{background:rgba(0,212,255,0.05);border-color:rgba(0,212,255,0.2);}
+  .signals-loading{display:none;align-items:center;gap:12px;padding:30px 20px;color:var(--muted);font-size:0.75rem;}
+  .score-badge{display:inline-block;padding:4px 14px;border-radius:20px;font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-left:10px;}
+  .score-hi{background:rgba(0,230,118,0.15);color:var(--green);}
+  .score-mid{background:rgba(255,215,64,0.15);color:var(--yellow);}
+  .score-lo{background:rgba(255,61,87,0.15);color:var(--red);}
+
+  @media(max-width:700px){
+    .summary-strip{grid-template-columns:1fr 1fr;}
+    .intel-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="logo">PORTFOLIO<span>LIVE</span></div>
+      <div style="font-size:0.62rem;color:var(--muted);margin-top:3px;">AMAN TEWATIA · UCC: 32BWEQ · Upstox</div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <button class="btn-refresh" onclick="fetchLivePrices()">⟳ Refresh Prices</button>
+      <button class="btn-refresh" style="background:rgba(255,215,64,0.1);color:var(--yellow);border-color:rgba(255,215,64,0.25);" onclick="runMorningBrief()">☀ Morning Brief</button>
+      <div>
+        <div class="badge"><span class="live-dot"></span>LIVE</div>
+        <div class="last-sync" id="lastSync">Not synced yet</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOKEN SETUP PANEL (shown if token missing) -->
+  <div class="setup-panel" id="setupPanel">
+    <div class="setup-title">⚙️ Paste your Upstox Access Token to go live</div>
+    <div style="font-size:0.7rem;color:var(--muted);margin-bottom:12px;">Token expires daily at midnight. Paste a fresh one each morning.</div>
+    <div class="setup-row">
+      <input class="setup-input" id="tokenInput" placeholder="Paste access_token here (eyJ0eXAi...)" type="password">
+      <button class="btn btn-primary" onclick="saveToken()">Connect</button>
+    </div>
+  </div>
+
+  <!-- ANTHROPIC KEY SETUP -->
+  <div class="setup-panel" id="anthropicPanel">
+    <div class="setup-title">🤖 Paste your Anthropic API Key to enable AI features</div>
+    <div style="font-size:0.7rem;color:var(--muted);margin-bottom:12px;">Get your key from <strong>console.anthropic.com</strong> → API Keys. Starts with <code>sk-ant-</code>. Stored locally only.</div>
+    <div class="setup-row">
+      <input class="setup-input" id="anthropicInput" placeholder="sk-ant-api03-..." type="password">
+      <button class="btn btn-primary" onclick="saveAnthropicKey()">Save Key</button>
+    </div>
+  </div>
+
+  <!-- ALERTS -->
+  <div class="alerts-wrap" id="alertsWrap"></div>
+
+  <!-- SUMMARY STRIP -->
+  <div class="summary-strip">
+    <div class="sum-card c-blue">
+      <div class="sum-label">Portfolio Value</div>
+      <div class="sum-value" id="sumTotal">₹14.14L</div>
+      <div class="sum-sub">Live market value</div>
+    </div>
+    <div class="sum-card c-yellow">
+      <div class="sum-label">Invested</div>
+      <div class="sum-value" style="color:var(--yellow)" id="sumInvested">—</div>
+      <div class="sum-sub">Enter buy prices</div>
+    </div>
+    <div class="sum-card c-red" id="pnlCard">
+      <div class="sum-label">Unrealised P&L</div>
+      <div class="sum-value" id="sumPnl">—</div>
+      <div class="sum-sub" id="sumPnlPct">—</div>
+    </div>
+    <div class="sum-card c-muted">
+      <div class="sum-label">Today's Move</div>
+      <div class="sum-value" id="sumToday">—</div>
+      <div class="sum-sub">Live portfolio change</div>
+    </div>
+    <div class="sum-card c-muted">
+      <div class="sum-label">Sensex</div>
+      <div class="sum-value neg">73,575</div>
+      <div class="sum-sub">↓10.76% YoY · Caution</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('live',this)">Live Holdings</button>
+    <button class="tab" onclick="switchTab('intel',this)">Market Intel</button>
+    <button class="tab" onclick="switchTab('allocation',this)">Allocation</button>
+    <button class="tab" onclick="switchTab('ai',this)">AI Expert</button>
+    <button class="tab" onclick="switchTab('signals',this)" id="signalsTab">📡 Daily Signals</button>
+  </div>
+
+  <!-- LIVE HOLDINGS TAB -->
+  <div class="tab-content active" id="tab-live">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div class="section-title" style="margin:0;flex:1;">📈 Direct Equities</div>
+      <span style="font-size:0.65rem;color:var(--muted);">Enter avg buy price for P&L</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Stock</th><th>Qty</th><th>Live Price ₹</th><th>Chg %</th>
+            <th>Avg Buy ₹</th><th>Invested ₹</th><th>Value ₹</th>
+            <th>P&L ₹</th><th>P&L %</th>
+            <th>Avg Down Zone</th><th>Sell Target</th><th>Stop Loss</th>
+            <th>Verdict</th><th>AI</th>
+          </tr>
+        </thead>
+        <tbody id="eqBody"></tbody>
+      </table>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 12px;">
+      <div class="section-title" style="margin:0;flex:1;">💰 SIP Funds & ETFs</div>
+      <span style="font-size:0.65rem;color:var(--muted);">No stop-loss — SIP & hold logic</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fund / ETF</th><th>Type</th><th>Units</th><th>NAV ₹</th><th>Chg %</th>
+            <th>Avg Cost ₹</th><th>Invested ₹</th><th>Value ₹</th>
+            <th>P&L ₹</th><th>P&L %</th>
+            <th>SIP Action</th><th>Verdict</th><th>AI</th>
+          </tr>
+        </thead>
+        <tbody id="sipBody"></tbody>
+      </table>
+    </div>
+    <button class="btn btn-primary" style="margin-top:16px;" onclick="quickAsk('Run a full conservative risk review of my portfolio with live prices and technicals. Red-team each loss-making position. For every key holding give Verdict, Downside Risk, Macro Forces, and sized Actionable Execution.')">🛡 Full Risk Review</button>
+  </div>
+
+  <!-- MARKET INTEL TAB -->
+  <div class="tab-content" id="tab-intel">
+    <div class="morning-brief" id="morningBriefBox" style="display:none;">
+      <div class="morning-title">☀️ Morning Brief</div>
+      <div id="morningBriefContent"></div>
+    </div>
+
+    <div class="intel-grid">
+      <div class="intel-card">
+        <div class="intel-title">🇮🇳 India Macro</div>
+        <div class="intel-row"><span>Sensex</span><span class="neg">73,575 ↓0.90%</span></div>
+        <div class="intel-row"><span>YoY Change</span><span class="neg">↓10.76%</span></div>
+        <div class="intel-row"><span>RBI Repo Rate</span><span style="color:var(--yellow)">5.25% (held)</span></div>
+        <div class="intel-row"><span>GDP Forecast FY27</span><span class="neg">6.6% (cut)</span></div>
+        <div class="intel-row"><span>Inflation Target</span><span class="neg">5.1% (raised)</span></div>
+        <div class="intel-row"><span>Rupee</span><span class="neg">₹90–91/USD</span></div>
+      </div>
+      <div class="intel-card">
+        <div class="intel-title">🌍 Global Macro</div>
+        <div class="intel-row"><span>US Fed Rate</span><span class="pos">3.50–3.75% (dovish)</span></div>
+        <div class="intel-row"><span>FPI Flows YTD</span><span class="neg">-$17B outflow</span></div>
+        <div class="intel-row"><span>US Tariff on India</span><span class="neg">50% — headwind</span></div>
+        <div class="intel-row"><span>Goldman India GDP</span><span class="neg">5.9% (revised down)</span></div>
+        <div class="intel-row"><span>EV/Auto Software</span><span class="pos">Strong globally</span></div>
+        <div class="intel-row"><span>Gold</span><span class="pos">At highs — hedge ok</span></div>
+      </div>
+      <div class="intel-card">
+        <div class="intel-title">📋 Action Priority</div>
+        <div class="intel-row"><span>EXIT NOW</span><span class="neg">Gujarat Toolroom</span></div>
+        <div class="intel-row"><span>ACCUMULATE</span><span class="pos">KPIT · JioFin · Greenpanel</span></div>
+        <div class="intel-row"><span>ADD via SIP</span><span class="pos">PPFAS · HDFC N50</span></div>
+        <div class="intel-row"><span>HOLD only</span><span style="color:var(--yellow)">Trident · SBI SC · Tata Dig</span></div>
+        <div class="intel-row"><span>Small-cap P/E</span><span class="neg">28x vs 17x avg — RISK</span></div>
+        <div class="intel-row"><span>Nifty Target 2026</span><span class="pos">~28,992 (+12%)</span></div>
+      </div>
+    </div>
+
+    <div class="section-title">📈 Direct Equities — Analyst Targets</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Stock</th><th>Mkt Price</th>
+            <th>Avg Down Zone ₹</th><th>Sell / Target ₹</th>
+            <th>Stop Loss ₹</th><th>52W Range</th><th>Verdict</th><th>Rationale</th>
+          </tr>
+        </thead>
+        <tbody id="intelEqBody"></tbody>
+      </table>
+    </div>
+
+    <div class="section-title" style="margin-top:24px;">💰 SIP Funds & ETFs — Strategy</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fund / ETF</th><th>Type</th><th>NAV ₹</th>
+            <th>SIP Action</th><th>Lump Sum?</th><th>Verdict</th><th>Rationale</th>
+          </tr>
+        </thead>
+        <tbody id="intelSipBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ALLOCATION TAB -->
+  <div class="tab-content" id="tab-allocation">
+    <div class="section-title">Portfolio Allocation</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="alloc-card"><div class="alloc-title">By Asset Type</div><div id="typeAlloc"></div></div>
+      <div class="alloc-card"><div class="alloc-title">Top 5 by Value</div><div id="topAlloc"></div></div>
+      <div class="alloc-card" style="grid-column:span 2;"><div class="alloc-title">All Holdings</div><div id="allAlloc"></div></div>
+    </div>
+  </div>
+
+  <!-- AI EXPERT TAB -->
+  <div class="tab-content" id="tab-ai">
+    <div class="ai-panel">
+      <div class="ai-header">
+        <span class="live-dot"></span>
+        <div class="ai-title">AI Risk Manager & Analyst</div>
+        <div style="font-size:0.62rem;color:var(--muted);margin-left:auto;">Conservative · Capital-Preservation First</div>
+      </div>
+      <div class="quick-actions">
+        <button class="qa-btn" onclick="quickAsk('Red-team my whole portfolio. For each loss-making holding, argue why it could fall further and give the worst-case. Then your verdict.')">🛡 Red-Team My Portfolio</button>
+        <button class="qa-btn" onclick="quickAsk('Which of my holdings are in loss and by how much? Rank worst to best with a one-line verdict each.')">📉 Loss Report</button>
+        <button class="qa-btn" onclick="quickAsk('For KPIT, Jio Financial and Greenpanel: give entry, stop-loss (ATR/support based), and exact position size within my 1-2% risk budget.')">📊 Sized Entry Plan</button>
+        <button class="qa-btn" onclick="quickAsk('Given elevated global risk, how much cash should I raise and what should I trim right now?')">💵 Cash & Hedge</button>
+        <button class="qa-btn" onclick="quickAsk('My instinct is to average down to zero my loss. Stress-test this strategy for my portfolio. Where would it be a mistake?')">⚠️ Stress-Test Averaging</button>
+        <button class="qa-btn" onclick="quickAsk('Give me a capital-preservation 90-day plan: what to cut, what to hold, what to accumulate, in priority order.')">🗓 90-Day Defense Plan</button>
+      </div>
+      <div class="chat-history" id="chatHistory">
+        <div class="msg ai">
+          🛡 <strong>Good day, Aman. I'm your AI Risk Manager.</strong> My first job is protecting your principal — growth comes second.<br><br>
+          📊 <strong>Risk environment is ELEVATED:</strong> Sensex ↓10.76% YoY, RBI raised inflation to 5.1% with GDP cut to 6.6%, FPI pulling money out, and small-caps at a dangerous 28x P/E. This is not a "buy everything on dips" market.<br><br>
+          ⚠️ <strong>On your averaging instinct:</strong> I will stress-test every averaging idea, not rubber-stamp it. Averaging into a falling stock with weak fundamentals (e.g. Gujarat Toolroom) destroys capital. I'll tell you where averaging is smart and where it's a trap.<br><br>
+          Every answer follows: <strong>Verdict → Downside Risk → Macro Forces → Actionable Execution</strong>. For direct equities I size every trade to a strict 1-2% risk budget. Enter your avg buy prices and ask away.
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chatInput" placeholder="Ask your financial consultant..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="btn btn-primary" id="sendBtn" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAILY SIGNALS TAB -->
+  <div class="tab-content" id="tab-signals">
+    <div class="signals-header">
+      <div class="section-title" style="margin:0;flex:1;">📡 Daily Trading Signals</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <span style="font-size:0.65rem;color:var(--muted);">Generated: <span id="lastSignalDate">—</span></span>
+        <button class="btn-refresh" onclick="generateDailySignals(true)">↻ Regenerate</button>
+      </div>
+    </div>
+    <div class="signals-loading" id="signalsLoading">
+      <div class="loader"></div>
+      <span>Analysing portfolio and market data — generating today's signals...</span>
+    </div>
+    <div id="signalsContent">
+      <div style="color:var(--muted);font-size:0.75rem;padding:20px 0;">Signals auto-load on first open each day. Click "Regenerate" to refresh manually.</div>
+    </div>
+  </div>
+
+</div>
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const UPSTOX_API_KEY = '99788de5-208d-4c2b-8402-0b13279502cf';
+let ACCESS_TOKEN  = localStorage.getItem('upstox_token') || '';
+let ANTHROPIC_KEY = localStorage.getItem('anthropic_key') || '';
+
+// ─── HOLDINGS ────────────────────────────────────────────────────────────────
+const holdings = [
+  { isin:'INF846K01EW2', sym:'AXISETSF',    name:'AXIS ETSF',        full:'Axis ETF DP Growth',           type:'ETF', qty:2385.034, basePrice:103.81 },
+  { isin:'INE08ZM01014', sym:'GREENPANEL',  name:'GREENPANEL',       full:'Greenpanel Industries',         type:'EQ',  qty:374,      basePrice:201.55 },
+  { isin:'INE145J01032', sym:'GUJRAT',      name:'GUJARAT TOOL',     full:'Gujarat Toolroom',              type:'EQ',  qty:9660,     basePrice:0.54   },
+  { isin:'INF179K01WM1', sym:'HDFCNIFTY',  name:'HDFC NFT50',       full:'HDFC Nifty50 Index Fund',       type:'MF',  qty:39.152,   basePrice:227.58 },
+  { isin:'INF109K01Y07', sym:'ICICIEQDF',  name:'ICICI EQ&DF',      full:'ICICI Pru Equity & Debt Fund',  type:'MF',  qty:66.257,   basePrice:437.34 },
+  { isin:'INE758E01017', sym:'JIOFIN',      name:'JIO FINANCIAL',    full:'Jio Financial Services',        type:'EQ',  qty:292,      basePrice:236.90 },
+  { isin:'INE718I01012', sym:'JSWCEMENT',   name:'JSW CEMENT',       full:'JSW Cement',                    type:'EQ',  qty:22,       basePrice:127.45 },
+  { isin:'INE134B01017', sym:'KECL',        name:'KIRLOSKAR ELEC',   full:'Kirloskar Electric',            type:'EQ',  qty:110,      basePrice:106.90 },
+  { isin:'INE04I401011', sym:'KPITTECH',    name:'KPIT TECH',        full:'KPIT Technologies',             type:'EQ',  qty:181,      basePrice:777.05 },
+  { isin:'INF769K01DM9', sym:'MIRAEETF',   name:'MIRAE ETSF',       full:'Mirae Asset ETF DP Growth',     type:'ETF', qty:4116.427, basePrice:55.029 },
+  { isin:'INF247L01445', sym:'MOMFMID',    name:'MOMF MID30F',      full:'Motilal Oswal Mid30 Fund',       type:'MF',  qty:680.038,  basePrice:105.113},
+  { isin:'INF204KB14I2', sym:'NIPETF',     name:'NIP ETF N50',      full:'Nippon ETF Nifty50 BeES',        type:'ETF', qty:63,       basePrice:265.43 },
+  { isin:'INF879O01027', sym:'PPFAS',      name:'PPFAS FCF',        full:'Parag Parikh Flexi Cap Fund',    type:'MF',  qty:208.63,   basePrice:89.149 },
+  { isin:'INE484I01029', sym:'PRECAM',     name:'PRECISION CAMSH',  full:'Precision Camshafts',            type:'EQ',  qty:100,      basePrice:147.20 },
+  { isin:'INF966L01986', sym:'QUANTTAX',   name:'QUANT TAX',        full:'Quant Tax Plan',                 type:'MF',  qty:526.675,  basePrice:445.634},
+  { isin:'INF200K01RP8', sym:'SBIGOLD',    name:'SBI GOLD',         full:'SBI Gold Fund DP Growth',        type:'MF',  qty:2024.311, basePrice:47.216 },
+  { isin:'INF200K01T51', sym:'SBISMCAP',   name:'SBI SMCF',         full:'SBI Small Cap Fund',             type:'MF',  qty:449.804,  basePrice:194.755},
+  { isin:'INE976I01016', sym:'TATACAP',    name:'TATA CAPITAL',     full:'Tata Capital Ltd',               type:'EQ',  qty:46,       basePrice:314.65 },
+  { isin:'INF277K01Z77', sym:'TATADIG',    name:'TATA DIGITAL',     full:'Tata Digital India Fund',        type:'MF',  qty:1686.783, basePrice:46.086 },
+  { isin:'INE064C01022', sym:'TRIDENT',    name:'TRIDENT',          full:'Trident Ltd',                    type:'EQ',  qty:2804,     basePrice:24.36  },
+];
+
+// Research-backed analyst data
+const research = {
+  'INF846K01EW2': { avgDown:'SIP only',   sell:'Long-term',  stop:'—',    range:'—',           verdict:'hold',    note:'Broad ETF — SIP monthly' },
+  'INE08ZM01014': { avgDown:'175–185',    sell:'240–303',    stop:'155',  range:'150–320',     verdict:'buy',     note:'MDF sector tailwind; 17-analyst avg ₹303' },
+  'INE145J01032': { avgDown:'DO NOT BUY', sell:'EXIT NOW',   stop:'—',    range:'0.40–2.20',   verdict:'exit',    note:'Penny stock — high delisting risk' },
+  'INF179K01WM1': { avgDown:'Market dip', sell:'Long-term',  stop:'—',    range:'—',           verdict:'hold',    note:'Core index fund — add on market dips' },
+  'INF109K01Y07': { avgDown:'SIP only',   sell:'Long-term',  stop:'—',    range:'—',           verdict:'hold',    note:'Balanced hybrid — stable' },
+  'INE758E01017': { avgDown:'210–220',    sell:'280–320',    stop:'190',  range:'198–395',     verdict:'buy',     note:'JioBlackRock MF launch catalyst; Reliance backed' },
+  'INE718I01012': { avgDown:'110–115',    sell:'155–170',    stop:'95',   range:'90–200',      verdict:'hold',    note:'Infra capex theme; accumulate on dips' },
+  'INE134B01017': { avgDown:'100–105',    sell:'123',        stop:'90',   range:'83–180',      verdict:'caution', note:'1 analyst target ₹123; power sector ok' },
+  'INE04I401011': { avgDown:'720–750',    sell:'1050–1149',  stop:'650',  range:'624–1434',    verdict:'buy',     note:'46% off highs; EV software moat; bull case ₹1,284' },
+  'INF769K01DM9': { avgDown:'SIP only',   sell:'Long-term',  stop:'—',    range:'—',           verdict:'hold',    note:'Low-cost broad ETF — hold and SIP' },
+  'INF247L01445': { avgDown:'SIP only',   sell:'Long-term',  stop:'—',    range:'—',           verdict:'hold',    note:'Mid-cap fund; hold existing units' },
+  'INF204KB14I2': { avgDown:'Market dip', sell:'Long-term',  stop:'—',    range:'—',           verdict:'hold',    note:'Index ETF — add on Nifty dips' },
+  'INF879O01027': { avgDown:'SIP monthly','sell':'Long-term', stop:'—',   range:'—',           verdict:'buy',     note:'Best-in-class flexi cap; globally diversified' },
+  'INE484I01029': { avgDown:'135–140',    sell:'165–180',    stop:'120',  range:'110–200',     verdict:'hold',    note:'Auto ancillary; modest outlook' },
+  'INF966L01986': { avgDown:'SIP monthly','sell':'Long-term', stop:'—',   range:'—',           verdict:'buy',     note:'Top ELSS; consistent outperformer' },
+  'INF200K01RP8': { avgDown:'Hold',       sell:'Global high','stop':'—',  range:'—',           verdict:'hold',    note:'Gold hedge — global uncertainty makes this valuable' },
+  'INF200K01T51': { avgDown:'CAUTION',    sell:'Hold only',  stop:'—',    range:'—',           verdict:'caution', note:'Small-caps at 28x P/E vs 17x avg — expensive' },
+  'INE976I01016': { avgDown:'290–300',    sell:'360–380',    stop:'270',  range:'250–420',     verdict:'hold',    note:'NBFC under RBI watch; monitor closely' },
+  'INF277K01Z77': { avgDown:'CAUTION',    sell:'Hold only',  stop:'—',    range:'—',           verdict:'caution', note:'IT/Digital sector under pressure; no fresh addition' },
+  'INE064C01022': { avgDown:'22–23',      sell:'28–32',      stop:'18',   range:'18–42',       verdict:'hold',    note:'Textile exports hit by US tariffs; hold only' },
+};
+
+// Live prices (updated from API or fallback)
+const livePrices  = {};
+const liveChanges = {};
+const buyPrices   = {};
+const indicators  = {}; // { isin: {rsi, macd, signal, ma20, ma50, atr, support, resistance, computed} }
+
+// ─── TECHNICAL INDICATOR MATH (computed from real candles, never guessed) ─────
+function calcRSI(closes, period=14){
+  if(closes.length<period+1) return null;
+  let gains=0, losses=0;
+  for(let i=1;i<=period;i++){
+    const ch=closes[i]-closes[i-1];
+    if(ch>=0) gains+=ch; else losses-=ch;
+  }
+  let avgG=gains/period, avgL=losses/period;
+  for(let i=period+1;i<closes.length;i++){
+    const ch=closes[i]-closes[i-1];
+    avgG=(avgG*(period-1)+(ch>0?ch:0))/period;
+    avgL=(avgL*(period-1)+(ch<0?-ch:0))/period;
+  }
+  if(avgL===0) return 100;
+  const rs=avgG/avgL;
+  return 100-(100/(1+rs));
+}
+function ema(arr,period){
+  const k=2/(period+1);
+  let e=arr[0];
+  for(let i=1;i<arr.length;i++) e=arr[i]*k+e*(1-k);
+  return e;
+}
+function emaSeries(arr,period){
+  const k=2/(period+1); const out=[arr[0]];
+  for(let i=1;i<arr.length;i++) out.push(arr[i]*k+out[i-1]*(1-k));
+  return out;
+}
+function calcMACD(closes){
+  if(closes.length<35) return {macd:null,signal:null};
+  const e12=emaSeries(closes,12), e26=emaSeries(closes,26);
+  const macdLine=closes.map((_,i)=>e12[i]-e26[i]);
+  const signalArr=emaSeries(macdLine.slice(26),9);
+  return {macd:macdLine[macdLine.length-1], signal:signalArr[signalArr.length-1]};
+}
+function calcMA(closes,period){
+  if(closes.length<period) return null;
+  const slice=closes.slice(-period);
+  return slice.reduce((a,b)=>a+b,0)/period;
+}
+function calcATR(highs,lows,closes,period=14){
+  if(closes.length<period+1) return null;
+  const trs=[];
+  for(let i=1;i<closes.length;i++){
+    trs.push(Math.max(highs[i]-lows[i], Math.abs(highs[i]-closes[i-1]), Math.abs(lows[i]-closes[i-1])));
+  }
+  const slice=trs.slice(-period);
+  return slice.reduce((a,b)=>a+b,0)/period;
+}
+
+function fmt(n,d=2){if(isNaN(n)||n===null)return'—';return new Intl.NumberFormat('en-IN',{maximumFractionDigits:d,minimumFractionDigits:d}).format(n);}
+function fmtShort(n){if(Math.abs(n)>=100000)return'₹'+(n/100000).toFixed(2)+'L';if(Math.abs(n)>=1000)return'₹'+(n/1000).toFixed(1)+'K';return'₹'+fmt(n);}
+
+// ─── TOKEN MANAGEMENT ─────────────────────────────────────────────────────────
+function saveToken(){
+  const t = document.getElementById('tokenInput').value.trim();
+  if(!t){alert('Paste your access token first');return;}
+  ACCESS_TOKEN = t;
+  localStorage.setItem('upstox_token', t);
+  document.getElementById('setupPanel').classList.remove('show');
+  fetchLivePrices();
+}
+
+function checkToken(){
+  if(!ACCESS_TOKEN){
+    document.getElementById('setupPanel').classList.add('show');
+  } else {
+    fetchLivePrices();
+  }
+  if(!ANTHROPIC_KEY){
+    document.getElementById('anthropicPanel').classList.add('show');
+  }
+}
+
+function saveAnthropicKey(){
+  const k = document.getElementById('anthropicInput').value.trim();
+  if(!k || !k.startsWith('sk-ant-')){alert('Paste a valid Anthropic key — it starts with sk-ant-');return;}
+  ANTHROPIC_KEY = k;
+  localStorage.setItem('anthropic_key', k);
+  document.getElementById('anthropicPanel').classList.remove('show');
+}
+
+function aiHeaders(){
+  return {
+    'Content-Type':'application/json',
+    'x-api-key': ANTHROPIC_KEY,
+    'anthropic-version':'2023-06-01',
+    'anthropic-dangerous-direct-browser-access':'true'
+  };
+}
+
+// ─── LIVE PRICE FETCH ─────────────────────────────────────────────────────────
+async function fetchLivePrices(){
+  if(!ACCESS_TOKEN){
+    document.getElementById('setupPanel').classList.add('show');
+    return;
+  }
+  document.getElementById('lastSync').textContent = 'Fetching live prices...';
+
+  // Fetch each equity/ETF via Upstox market quote API
+  // Mutual fund NAVs come from Upstox holdings API
+  const isins = holdings.map(h=>h.isin).join(',');
+
+  try {
+    // Try Upstox market quotes for equity instruments
+    const eqHoldings = holdings.filter(h=>h.type==='EQ'||h.type==='ETF');
+    const mfHoldings = holdings.filter(h=>h.type==='MF');
+
+    // Fetch equity/ETF quotes
+    const promises = eqHoldings.map(async h=>{
+      try{
+        const r = await fetch(`https://api.upstox.com/v2/market-quote/quotes?instrument_key=NSE_EQ%7C${h.isin}`,{
+          headers:{Authorization:`Bearer ${ACCESS_TOKEN}`,'Accept':'application/json'}
+        });
+        const d = await r.json();
+        const key = Object.keys(d.data||{})[0];
+        if(key && d.data[key]){
+          const q = d.data[key];
+          livePrices[h.isin]  = q.last_price || h.basePrice;
+          liveChanges[h.isin] = q.net_change_percentage || 0;
+        } else { livePrices[h.isin]=h.basePrice; liveChanges[h.isin]=0; }
+      }catch(e){ livePrices[h.isin]=h.basePrice; liveChanges[h.isin]=0; }
+
+      // Fetch daily candles → compute REAL indicators (only for direct equities)
+      if(h.type==='EQ'){
+        try{
+          const today=new Date().toISOString().slice(0,10);
+          const from=new Date(Date.now()-120*86400000).toISOString().slice(0,10);
+          const cr=await fetch(`https://api.upstox.com/v2/historical-candle/NSE_EQ%7C${h.isin}/day/${today}/${from}`,{
+            headers:{Authorization:`Bearer ${ACCESS_TOKEN}`,'Accept':'application/json'}
+          });
+          const cd=await cr.json();
+          const candles=(cd.data&&cd.data.candles)?cd.data.candles.slice().reverse():[];
+          // candle format: [timestamp, open, high, low, close, volume, oi]
+          if(candles.length>=35){
+            const closes=candles.map(c=>c[4]);
+            const highs=candles.map(c=>c[2]);
+            const lows=candles.map(c=>c[3]);
+            const macd=calcMACD(closes);
+            const recentLows=lows.slice(-20), recentHighs=highs.slice(-20);
+            indicators[h.isin]={
+              rsi:calcRSI(closes),
+              macd:macd.macd, signal:macd.signal,
+              ma20:calcMA(closes,20), ma50:calcMA(closes,50),
+              atr:calcATR(highs,lows,closes),
+              support:Math.min(...recentLows),
+              resistance:Math.max(...recentHighs),
+              computed:true
+            };
+          }
+        }catch(e){ /* indicators stay absent — AI told not to guess */ }
+      }
+    });
+
+    // Fetch MF NAVs from Upstox holdings
+    const mfPromise = (async()=>{
+      try{
+        const r = await fetch('https://api.upstox.com/v2/portfolio/long-term-holdings',{
+          headers:{Authorization:`Bearer ${ACCESS_TOKEN}`,'Accept':'application/json'}
+        });
+        const d = await r.json();
+        if(d.data && Array.isArray(d.data)){
+          d.data.forEach(h=>{
+            const match = holdings.find(x=>x.isin===h.isin);
+            if(match){
+              livePrices[match.isin]  = h.last_price || match.basePrice;
+              liveChanges[match.isin] = 0;
+              if(!buyPrices[match.isin] && h.average_price>0){
+                buyPrices[match.isin] = h.average_price;
+              }
+            }
+          });
+        }
+      }catch(e){}
+    })();
+
+    await Promise.all([...promises, mfPromise]);
+
+    // Fill any missing with base prices
+    holdings.forEach(h=>{
+      if(!livePrices[h.isin]){livePrices[h.isin]=h.basePrice;liveChanges[h.isin]=0;}
+    });
+
+    document.getElementById('lastSync').textContent = 'Live · '+new Date().toLocaleTimeString('en-IN');
+    renderHoldings();
+    updateSummary();
+    generateAlerts();
+
+  } catch(e){
+    document.getElementById('lastSync').textContent = 'Using last known prices';
+    holdings.forEach(h=>{if(!livePrices[h.isin]){livePrices[h.isin]=h.basePrice;liveChanges[h.isin]=0;}});
+    renderHoldings();
+    updateSummary();
+  }
+}
+
+// ─── RENDER HOLDINGS (split: equities vs SIP funds/ETFs) ─────────────────────
+function renderHoldings(){
+  const eqBody  = document.getElementById('eqBody');
+  const sipBody = document.getElementById('sipBody');
+  eqBody.innerHTML=''; sipBody.innerHTML='';
+
+  holdings.forEach((h,i)=>{
+    const lp    = livePrices[h.isin]||h.basePrice;
+    const chg   = liveChanges[h.isin]||0;
+    const value = lp*h.qty;
+    const bp    = parseFloat(buyPrices[h.isin])||0;
+    const inv   = bp>0?bp*h.qty:null;
+    const pnl   = inv!=null?value-inv:null;
+    const pnlP  = inv&&inv>0?(pnl/inv)*100:null;
+    const pCls  = pnl===null?'neu':pnl>=0?'pos':'neg';
+    const r     = research[h.isin]||{};
+    const vCls  = r.verdict==='buy'?'verdict-buy':r.verdict==='exit'?'verdict-exit':r.verdict==='caution'?'verdict-caution':'verdict-hold';
+    const vTxt  = r.verdict==='buy'?'✅ ACCUMULATE':r.verdict==='exit'?'🚨 EXIT':r.verdict==='caution'?'⚠️ CAUTION':'🟡 HOLD';
+    const chgCls= chg>=0?'chg-pos':'chg-neg';
+    const tr    = document.createElement('tr');
+
+    if(h.type==='EQ'){
+      // ── Direct equity row ──
+      tr.innerHTML=`
+        <td><div class="scrip-name">${h.name}</div><div class="scrip-sub">${h.full}</div></td>
+        <td>${fmt(h.qty,0)}</td>
+        <td class="price-live pos">₹${fmt(lp)}</td>
+        <td class="${chgCls}">${chg>=0?'+':''}${fmt(chg,2)}%</td>
+        <td><input class="price-input" type="number" placeholder="Buy@" value="${buyPrices[h.isin]||''}" data-isin="${h.isin}" onchange="updateBuy(this)" min="0" step="0.01"></td>
+        <td>${inv!=null?'₹'+fmt(inv):'—'}</td>
+        <td>₹${fmt(value)}</td>
+        <td class="${pCls}">${pnl!=null?(pnl>=0?'+':'')+fmt(pnl):'—'}</td>
+        <td class="${pCls}">${pnlP!=null?(pnlP>=0?'+':'')+fmt(pnlP)+'%':'—'}</td>
+        <td style="color:var(--green);font-size:0.68rem;">${r.avgDown||'—'}</td>
+        <td style="color:var(--accent);font-size:0.68rem;">${r.sell||'—'}</td>
+        <td class="neg" style="font-size:0.68rem;">${r.stop||'—'}</td>
+        <td class="${vCls}" style="font-size:0.68rem;font-weight:600;">${vTxt}</td>
+        <td><button class="btn-sm btn-ask" onclick="analyzeOne(${i})">Ask</button></td>
+      `;
+      eqBody.appendChild(tr);
+    } else {
+      // ── MF / ETF row ──
+      const sipAction = r.avgDown||'SIP monthly';
+      tr.innerHTML=`
+        <td><div class="scrip-name">${h.name}</div><div class="scrip-sub">${h.full}</div></td>
+        <td><span class="tag ${h.type.toLowerCase()}">${h.type}</span></td>
+        <td>${fmt(h.qty,3)}</td>
+        <td class="pos">₹${fmt(lp)}</td>
+        <td class="${chgCls}">${chg>=0?'+':''}${fmt(chg,2)}%</td>
+        <td><input class="price-input" type="number" placeholder="Cost@" value="${buyPrices[h.isin]||''}" data-isin="${h.isin}" onchange="updateBuy(this)" min="0" step="0.01"></td>
+        <td>${inv!=null?'₹'+fmt(inv):'—'}</td>
+        <td>₹${fmt(value)}</td>
+        <td class="${pCls}">${pnl!=null?(pnl>=0?'+':'')+fmt(pnl):'—'}</td>
+        <td class="${pCls}">${pnlP!=null?(pnlP>=0?'+':'')+fmt(pnlP)+'%':'—'}</td>
+        <td style="color:var(--yellow);font-size:0.68rem;">${sipAction}</td>
+        <td class="${vCls}" style="font-size:0.68rem;font-weight:600;">${vTxt}</td>
+        <td><button class="btn-sm btn-ask" onclick="analyzeOne(${i})">Ask</button></td>
+      `;
+      sipBody.appendChild(tr);
+    }
+  });
+}
+
+function updateBuy(input){
+  buyPrices[input.dataset.isin]=parseFloat(input.value)||0;
+  renderHoldings();
+  updateSummary();
+}
+
+function updateSummary(){
+  let totalVal=0,totalInv=0,hasInv=false,todayMove=0;
+  holdings.forEach(h=>{
+    const lp=livePrices[h.isin]||h.basePrice;
+    const val=lp*h.qty;
+    totalVal+=val;
+    todayMove+=((liveChanges[h.isin]||0)/100)*val;
+    const bp=parseFloat(buyPrices[h.isin])||0;
+    if(bp>0){hasInv=true;totalInv+=bp*h.qty;}
+  });
+  document.getElementById('sumTotal').textContent=fmtShort(totalVal);
+  if(hasInv){
+    document.getElementById('sumInvested').textContent=fmtShort(totalInv);
+    const pnl=totalVal-totalInv;
+    const pnlP=(pnl/totalInv)*100;
+    document.getElementById('sumPnl').textContent=(pnl>=0?'+':'')+fmtShort(pnl);
+    document.getElementById('sumPnl').className='sum-value '+(pnl>=0?'pos':'neg');
+    document.getElementById('sumPnlPct').textContent=(pnlP>=0?'+':'')+fmt(pnlP)+'% return';
+    document.getElementById('pnlCard').className='sum-card '+(pnl>=0?'c-green':'c-red');
+  }
+  document.getElementById('sumToday').textContent=(todayMove>=0?'+':'')+fmtShort(todayMove);
+  document.getElementById('sumToday').className='sum-value '+(todayMove>=0?'pos':'neg');
+}
+
+// ─── ALERTS ──────────────────────────────────────────────────────────────────
+function generateAlerts(){
+  const wrap=document.getElementById('alertsWrap');
+  wrap.innerHTML='';
+  const alerts=[];
+
+  holdings.forEach(h=>{
+    const lp=livePrices[h.isin]||h.basePrice;
+    const chg=liveChanges[h.isin]||0;
+    const r=research[h.isin]||{};
+    if(h.isin==='INE145J01032') alerts.push({cls:'alert-sell',icon:'🚨',text:`<strong>Gujarat Toolroom</strong> at ₹${lp} — PENNY STOCK. Exit immediately and redeploy capital into KPIT or Jio Financial.`});
+    else if(chg<=-2) alerts.push({cls:'alert-buy',icon:'📉',text:`<strong>${h.name}</strong> down ${fmt(chg,2)}% today — potential averaging opportunity. Analyst avg-down zone: ₹${r.avgDown||'—'}`});
+    else if(chg>=2) alerts.push({cls:'alert-sell',icon:'📈',text:`<strong>${h.name}</strong> up ${fmt(chg,2)}% today — consider booking partial profits near analyst target ₹${r.sell||'—'}`});
+  });
+
+  if(alerts.length===0) alerts.push({cls:'',icon:'✅',text:'No major alerts right now. Market is trading in a normal range for your holdings.'});
+  alerts.slice(0,5).forEach(a=>{
+    const d=document.createElement('div');
+    d.className='alert-item '+a.cls;
+    d.innerHTML=`<span class="alert-icon">${a.icon}</span><span>${a.text}</span>`;
+    wrap.appendChild(d);
+  });
+}
+
+// ─── INTEL TABLE (split: equities vs SIP funds/ETFs) ─────────────────────────
+function renderIntel(){
+  const eqTbody  = document.getElementById('intelEqBody');
+  const sipTbody = document.getElementById('intelSipBody');
+  eqTbody.innerHTML=''; sipTbody.innerHTML='';
+
+  holdings.forEach(h=>{
+    const lp  = livePrices[h.isin]||h.basePrice;
+    const r   = research[h.isin]||{};
+    const vCls= r.verdict==='buy'?'verdict-buy':r.verdict==='exit'?'verdict-exit':r.verdict==='caution'?'verdict-caution':'verdict-hold';
+    const vTxt= r.verdict==='buy'?'✅ ACCUMULATE':r.verdict==='exit'?'🚨 EXIT':r.verdict==='caution'?'⚠️ CAUTION':'🟡 HOLD';
+    const tr  = document.createElement('tr');
+
+    if(h.type==='EQ'){
+      tr.innerHTML=`
+        <td><div class="scrip-name">${h.name}</div><div class="scrip-sub">${h.full}</div></td>
+        <td class="pos">₹${fmt(lp)}</td>
+        <td style="color:var(--green);font-size:0.7rem;">${r.avgDown||'—'}</td>
+        <td style="color:var(--accent);font-size:0.7rem;">${r.sell||'—'}</td>
+        <td class="neg" style="font-size:0.7rem;">${r.stop||'—'}</td>
+        <td style="font-size:0.68rem;color:var(--muted);">${r.range||'—'}</td>
+        <td class="${vCls}" style="font-size:0.68rem;font-weight:600;">${vTxt}</td>
+        <td style="font-size:0.67rem;color:var(--muted);max-width:200px;white-space:normal;">${r.note||'—'}</td>
+      `;
+      eqTbody.appendChild(tr);
+    } else {
+      // Funds/ETFs: SIP action and lump-sum guidance instead of stop-loss
+      const sipAction = r.avgDown||'Continue SIP';
+      const lumpSum   = (r.avgDown==='SIP only'||r.avgDown==='SIP monthly'||r.avgDown==='Market dip')
+                        ? '<span class="neg">No lump sum</span>'
+                        : '<span class="pos">Dip only</span>';
+      tr.innerHTML=`
+        <td><div class="scrip-name">${h.name}</div><div class="scrip-sub">${h.full}</div></td>
+        <td><span class="tag ${h.type.toLowerCase()}">${h.type}</span></td>
+        <td class="pos">₹${fmt(lp)}</td>
+        <td style="color:var(--yellow);font-size:0.7rem;">${sipAction}</td>
+        <td style="font-size:0.7rem;">${lumpSum}</td>
+        <td class="${vCls}" style="font-size:0.68rem;font-weight:600;">${vTxt}</td>
+        <td style="font-size:0.67rem;color:var(--muted);max-width:220px;white-space:normal;">${r.note||'—'}</td>
+      `;
+      sipTbody.appendChild(tr);
+    }
+  });
+}
+
+// ─── ALLOCATION ───────────────────────────────────────────────────────────────
+const COLORS={EQ:'#00d4ff',MF:'#ffd740',ETF:'#ff6b35'};
+function renderAllocation(){
+  const totalVal=holdings.reduce((s,h)=>s+(livePrices[h.isin]||h.basePrice)*h.qty,0);
+  const typeMap={};
+  holdings.forEach(h=>{typeMap[h.type]=(typeMap[h.type]||0)+(livePrices[h.isin]||h.basePrice)*h.qty;});
+  let h1='';
+  Object.entries(typeMap).sort((a,b)=>b[1]-a[1]).forEach(([t,v])=>{
+    const p=(v/totalVal*100).toFixed(1);
+    h1+=`<div class="bar-row"><div class="bar-label">${t==='EQ'?'Equities':t==='MF'?'Mutual Funds':'ETFs'}</div><div class="bar-track"><div class="bar-fill" style="width:${p}%;background:${COLORS[t]}"></div></div><div class="bar-pct">${p}%</div></div>`;
+  });
+  document.getElementById('typeAlloc').innerHTML=h1;
+  let h2='';
+  [...holdings].sort((a,b)=>((livePrices[b.isin]||b.basePrice)*b.qty)-((livePrices[a.isin]||a.basePrice)*a.qty)).slice(0,5).forEach(h=>{
+    const v=(livePrices[h.isin]||h.basePrice)*h.qty;
+    const p=(v/totalVal*100).toFixed(1);
+    h2+=`<div class="bar-row"><div class="bar-label">${h.name}</div><div class="bar-track"><div class="bar-fill" style="width:${p}%;background:${COLORS[h.type]}"></div></div><div class="bar-pct">${p}%</div></div>`;
+  });
+  document.getElementById('topAlloc').innerHTML=h2;
+  let h3='';
+  [...holdings].sort((a,b)=>((livePrices[b.isin]||b.basePrice)*b.qty)-((livePrices[a.isin]||a.basePrice)*a.qty)).forEach(h=>{
+    const v=(livePrices[h.isin]||h.basePrice)*h.qty;
+    const p=(v/totalVal*100).toFixed(1);
+    h3+=`<div class="bar-row"><div class="bar-label" style="width:150px">${h.name}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(p,0.3)}%;background:${COLORS[h.type]}"></div></div><div class="bar-pct">${p}%</div></div>`;
+  });
+  document.getElementById('allAlloc').innerHTML=h3;
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(name,el){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name==='allocation') renderAllocation();
+  if(name==='intel') renderIntel();
+  if(name==='signals') generateDailySignals(false);
+}
+
+// ─── DAILY SIGNALS ────────────────────────────────────────────────────────────
+async function generateDailySignals(force=false){
+  const today = new Date().toDateString();
+  const cachedDate = localStorage.getItem('daily_signals_date');
+  const cachedContent = localStorage.getItem('daily_signals_content');
+
+  // Use cache if same day and not forced
+  if(!force && cachedDate===today && cachedContent){
+    renderSignals(cachedContent);
+    return;
+  }
+
+  document.getElementById('signalsContent').innerHTML='';
+  document.getElementById('signalsLoading').style.display='flex';
+
+  const prompt=`Generate a structured DAILY TRADING SIGNALS report for today ${new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}. Use this EXACT format with these section headers:
+
+**PORTFOLIO HEALTH SCORE: X/10** — [one-line reason]
+
+**🛒 BUY / ACCUMULATE TODAY**
+[For each: Name | Entry zone ₹X-Y | Stop ₹Z | Target ₹W | Max position ₹ (1-2% rule) | Reason]
+[If none: say "No fresh buy signals today — market risk elevated."]
+
+**🚨 EXIT / SELL TODAY**
+[For each: Name | Why exit NOW | Don't hold below ₹X]
+[If none: say "No urgent exits today."]
+
+**⚠️ WATCH CLOSELY (next 2-3 days)**
+[Stocks near key levels — what to watch for and at what price to act]
+
+**🟡 HOLD — NO ACTION**
+[Brief comma-separated list of holdings to just hold]
+
+**📋 TOP 3 ACTIONS FOR TODAY**
+1. [Most urgent — with ₹ specifics]
+2. [Second]
+3. [Third]
+
+**⚡ RISK ALERT**
+[One-paragraph summary of the biggest portfolio risk right now and how to hedge it]
+
+Be extremely specific with ₹ numbers. Never say "consider" without a price. Strict capital-preservation lens.`;
+
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:aiHeaders(),
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1400,
+        system:buildContext(),
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const d=await r.json();
+    const reply=d.content?.find(b=>b.type==='text')?.text||'Could not generate signals.';
+    localStorage.setItem('daily_signals_date',today);
+    localStorage.setItem('daily_signals_content',reply);
+    renderSignals(reply);
+  }catch(e){
+    document.getElementById('signalsLoading').style.display='none';
+    document.getElementById('signalsContent').innerHTML='<div style="color:var(--red);padding:20px;">⚠️ Could not connect to AI. Check your Anthropic API key and connection.</div>';
+  }
+}
+
+function renderSignals(raw){
+  document.getElementById('signalsLoading').style.display='none';
+  document.getElementById('lastSignalDate').textContent=new Date().toLocaleString('en-IN');
+
+  // Parse into coloured blocks
+  const sections=[
+    {key:'PORTFOLIO HEALTH SCORE',cls:'sig-actions'},
+    {key:'🛒 BUY / ACCUMULATE TODAY',cls:'sig-buy'},
+    {key:'🚨 EXIT / SELL TODAY',cls:'sig-sell'},
+    {key:'⚠️ WATCH CLOSELY',cls:'sig-watch'},
+    {key:'🟡 HOLD',cls:'sig-hold'},
+    {key:'📋 TOP 3 ACTIONS FOR TODAY',cls:'sig-actions'},
+    {key:'⚡ RISK ALERT',cls:'sig-sell'},
+  ];
+
+  let html=raw;
+  // Highlight score badge
+  html=html.replace(/PORTFOLIO HEALTH SCORE:\s*(\d+)\/10/gi,(m,n)=>{
+    const num=parseInt(n);
+    const cls=num>=7?'score-hi':num>=5?'score-mid':'score-lo';
+    return `PORTFOLIO HEALTH SCORE: <span class="score-badge ${cls}">${n}/10</span>`;
+  });
+  // Bold markdown
+  html=html.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  // Newlines
+  html=html.replace(/\n/g,'<br>');
+
+  // Wrap each section header in a coloured block
+  sections.forEach(s=>{
+    const escaped=s.key.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const re=new RegExp(`(<strong>${escaped}[^<]*<\/strong>)`,'g');
+    html=html.replace(re,`</div><div class="sig-block ${s.cls}"><div style="font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;margin-bottom:8px;">$1</div>`);
+  });
+  // Remove leading orphan close tag
+  html=html.replace(/^<\/div>/,'');
+
+  document.getElementById('signalsContent').innerHTML=`<div class="signals-panel">${html}</div>`;
+}
+
+// ─── MORNING BRIEF ───────────────────────────────────────────────────────────
+async function runMorningBrief(){
+  document.getElementById('tab-intel').classList.add('active');
+  document.getElementById('tab-live').classList.remove('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab')[1].classList.add('active');
+  renderIntel();
+  const box=document.getElementById('morningBriefBox');
+  const content=document.getElementById('morningBriefContent');
+  box.style.display='block';
+  content.innerHTML='<div class="loader"></div> Generating morning brief...';
+
+  const prompt=`As a senior financial consultant, give Aman a sharp morning brief for today (08-Jun-2026). Cover:
+1. Global overnight cues (US markets, Asian markets, crude, gold, dollar index)
+2. Indian market outlook for today
+3. Top 2-3 stocks from his portfolio to watch today and why
+4. One specific action he should take today
+Keep it concise, punchy, and actionable. Use ₹ for amounts.
+
+His portfolio total: ₹14.14L. Top holdings: KPIT Tech (₹1.41L), Quant Tax (₹2.35L), Axis ETF (₹2.48L), Mirae ETF (₹2.27L).`;
+
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:aiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:600,system:'You are a senior financial consultant advising Indian retail investors. Be direct, specific, and data-driven.',messages:[{role:'user',content:prompt}]})});
+    const d=await r.json();
+    const txt=d.content?.find(b=>b.type==='text')?.text||'Could not generate brief.';
+    content.innerHTML=txt.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  }catch(e){content.innerHTML='⚠️ Could not connect to AI. Check your connection.';}
+}
+
+// ─── AI AGENT ─────────────────────────────────────────────────────────────────
+const chatMessages=[];
+
+function buildContext(){
+  const rows=holdings.map(h=>{
+    const lp=livePrices[h.isin]||h.basePrice;
+    const val=lp*h.qty;
+    const bp=parseFloat(buyPrices[h.isin])||0;
+    const inv=bp>0?bp*h.qty:null;
+    const pnl=inv?val-inv:null;
+    const r=research[h.isin]||{};
+    const ind=indicators[h.isin];
+    let techStr='';
+    if(ind&&ind.computed){
+      techStr=`, RSI=${fmt(ind.rsi,1)}, MACD=${fmt(ind.macd,2)}/signal=${fmt(ind.signal,2)} (${ind.macd>ind.signal?'bullish':'bearish'}), 20DMA=₹${fmt(ind.ma20)}, 50DMA=₹${fmt(ind.ma50)}, ATR=₹${fmt(ind.atr)}, 20d-support=₹${fmt(ind.support)}, 20d-resistance=₹${fmt(ind.resistance)}`;
+    } else if(h.type==='EQ'){
+      techStr=`, [NO LIVE TECHNICALS AVAILABLE — do not invent RSI/MACD/MA values for this stock]`;
+    }
+    return `- ${h.full} (${h.type}): qty=${fmt(h.qty,2)}, livePrice=₹${fmt(lp)}, value=₹${fmt(val)}, dayChg=${fmt(liveChanges[h.isin]||0,2)}%${bp?`, avgBuy=₹${bp}, invested=₹${fmt(inv)}, PNL=₹${fmt(pnl)} (${fmt(pnl/inv*100,1)}%)`:''}, analystAvgDown=₹${r.avgDown||'—'}, target=₹${r.sell||'—'}, verdict=${r.verdict||'hold'}${techStr}`;
+  }).join('\n');
+
+  const tv=holdings.reduce((s,h)=>s+(livePrices[h.isin]||h.basePrice)*h.qty,0);
+  const ti=holdings.reduce((s,h)=>{const bp=parseFloat(buyPrices[h.isin])||0;return s+bp*h.qty;},0);
+  const eqVal=holdings.filter(h=>h.type==='EQ').reduce((s,h)=>s+(livePrices[h.isin]||h.basePrice)*h.qty,0);
+  const riskBudget1=tv*0.01, riskBudget2=tv*0.02;
+
+  return `You are an ELITE, HIGHLY CONSERVATIVE AI FINANCIAL ANALYST & RISK MANAGER advising AMAN TEWATIA. Your dual mandate:
+1. CAPITAL PRESERVATION (primary): Ruthlessly identify risk, minimize drawdowns, protect principal. Downside-protection mindset always.
+2. LONG-TERM GROWTH (secondary): Identify asymmetric, sustainable compounding opportunities.
+
+=== DATA INGESTION PROTOCOL — synthesize all four pillars before answering ===
+1. PORTFOLIO STATE: holdings, position sizes, avg buy, concentration (data below).
+2. LIVE MARKET DATA: price action, day change, and computed technical indicators (RSI/MACD/MA/ATR/support) — these are COMPUTED FROM REAL UPSTOX CANDLES where shown. Where a stock says "NO LIVE TECHNICALS AVAILABLE", you MUST say technicals are unavailable for it — NEVER fabricate indicator values.
+3. MACRO & GLOBAL NEWS: rates, inflation, geopolitics, currency, indices (below).
+4. AFFECTING FACTORS: company news, earnings, regulation, supply chain.
+
+=== MANDATORY RISK MANAGEMENT RULES ===
+- POSITION SIZING: Aman's total portfolio = ₹${fmt(tv)}. Risk-of-ruin limits: max risk per single equity trade = 1% (₹${fmt(riskBudget1)}) to 2% (₹${fmt(riskBudget2)}). "Risk" = (entry − stop-loss) × quantity. Never recommend a trade whose stop-loss distance × qty exceeds this.
+- HARD STOP-LOSSES: For DIRECT EQUITIES only, define stops at technical support / ATR-based levels (e.g. entry − 1.5×ATR or below 20-day support), NOT arbitrary round percentages. State the exact ₹ trigger.
+- TIERED APPLICATION (critical): Trader-style stops & 1-2% sizing apply ONLY to direct equities. For MUTUAL FUNDS & ETFs (Quant Tax is ELSS with 3-yr lock-in, PPFAS/SBI/HDFC/Mirae/MOMF funds): NO stop-losses — use HOLD / TRIM / SIP-add logic and rebalancing instead. Never put a stop-loss on a fund.
+- HEDGING & CASH: When systemic/global risk is high (it IS elevated now — see macro), proactively suggest trimming, raising cash, or staging entries rather than deploying lump sums.
+- RED TEAMING (mandatory): Actively ARGUE AGAINST Aman's idea and your own. For any buy/average suggestion, state explicitly why the stock could keep falling and the absolute worst-case. Averaging down into deteriorating fundamentals is how capital dies — call it out every time. Aman's stated instinct is to "average down to zero the loss" — your job is to stress-test that, not rubber-stamp it.
+
+=== MANDATORY OUTPUT STRUCTURE (use these exact 4 headers every time) ===
+**1. The Verdict:** One sentence — Hold / Cut / Trim / Accumulate / Avoid.
+**2. Downside Risk Analysis:** Immediate threats; the technical floor/support (use real ATR/support if available, else say unavailable); worst-case scenario.
+**3. Macro & Sector Forces:** How current global/India macro & sector trends hit this asset now.
+**4. Actionable Execution:** Specific entry/exit ₹ targets, exact stop-loss trigger (equities only), and position-sizing limit in ₹ and shares within the 1-2% rule.
+
+(For broad "review my whole portfolio" questions, you may lead with a short portfolio-level verdict, then apply the 4-part structure per key holding.)
+
+=== LIVE MACRO CONTEXT (08-Jun-2026) ===
+- Sensex 73,575 (↓0.90% today, ↓10.76% YoY) — correction/risk-off
+- RBI repo 5.25% (held), GDP cut to 6.6%, inflation RAISED to 5.1% — stagflation-ish risk, limited room for cuts
+- US Fed 3.50-3.75% (dovish) — could revive EM flows IF risk appetite returns
+- FPI: −$17B YTD outflows from India
+- US 50% tariff on Indian goods — direct hit to exporters (Trident textiles)
+- Goldman India GDP 5.9% (below RBI) — growth concern
+- Small-caps 28x P/E vs 17x historical — OVERVALUED, high drawdown risk
+- Nifty consensus end-2026 ~28,992 (+12%) — but path expected volatile, small-caps under pressure
+
+=== PORTFOLIO STATE ===
+- Total Live Value: ₹${fmt(tv)}
+- Total Invested: ${ti>0?'₹'+fmt(ti):'NOT ENTERED — ask Aman to fill avg buy prices for precise P&L'}
+- Total P&L: ${ti>0?'₹'+fmt(tv-ti)+' ('+fmt((tv-ti)/ti*100,2)+'%)':'unknown'}
+- Direct equity exposure: ₹${fmt(eqVal)} (${fmt(eqVal/tv*100,1)}% of portfolio)
+- 1% risk budget: ₹${fmt(riskBudget1)} · 2% risk budget: ₹${fmt(riskBudget2)} per equity trade
+
+=== HOLDINGS (with live data + computed technicals) ===
+${rows}
+
+=== KEY ANALYST REFERENCE ===
+- KPIT Tech: avg-down ₹720-750, target ₹1,050-1,149 (bull ₹1,284), 46% off highs, EV-software moat
+- Jio Financial: avg-down ₹210-220, target ₹280-320, Reliance-backed, JioBlackRock catalyst
+- Greenpanel: avg-down ₹175-185, target ₹240-303 (17-analyst avg ₹303)
+- Gujarat Toolroom (₹0.54): EXIT — penny stock, delisting risk, no stop-loss can save it
+- PPFAS / HDFC Nifty50 / Quant Tax: core long-term holds, SIP-add not lump-sum
+- SBI Small Cap & Tata Digital: HOLD only, no fresh capital (sector/valuation risk)
+
+Be the risk manager who protects Aman's principal first. Specific numbers always. NOTE at the end: this is educational analysis, not SEBI-registered advice.`;
+}
+
+async function sendChat(){
+  const input=document.getElementById('chatInput');
+  const msg=input.value.trim();
+  if(!msg)return;
+  input.value='';
+  document.getElementById('sendBtn').disabled=true;
+  appendMsg('user',msg);
+  const loader=appendMsg('ai','<div class="loader"></div> Analysing...');
+  chatMessages.push({role:'user',content:msg});
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:aiHeaders(),body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:buildContext(),messages:chatMessages.map(m=>({role:m.role,content:m.content}))})});
+    const d=await r.json();
+    const reply=d.content?.find(b=>b.type==='text')?.text||'Error getting response.';
+    chatMessages.push({role:'assistant',content:reply});
+    loader.innerHTML=reply.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  }catch(e){loader.innerHTML='⚠️ Error connecting. Try again.';}
+  document.getElementById('sendBtn').disabled=false;
+}
+
+function appendMsg(role,text){
+  const div=document.createElement('div');
+  div.className='msg '+role;
+  div.innerHTML=role==='user'?text:text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  document.getElementById('chatHistory').appendChild(div);
+  document.getElementById('chatHistory').scrollTop=99999;
+  return div;
+}
+
+function quickAsk(q){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-ai').classList.add('active');
+  document.querySelectorAll('.tab')[3].classList.add('active');
+  document.getElementById('chatInput').value=q;
+  sendChat();
+}
+
+function analyzeOne(i){
+  const h=holdings[i];
+  const lp=livePrices[h.isin]||h.basePrice;
+  const bp=parseFloat(buyPrices[h.isin])||0;
+  const msg=bp>0
+    ?`Analyse ${h.full}: qty=${h.qty}, avgBuy=₹${bp}, livePrice=₹${lp}. How many more shares should I buy to average down? At what price? When should I sell?`
+    :`Analyse ${h.full}: qty=${h.qty}, livePrice=₹${lp}. What's the outlook? Should I buy, hold, or exit?`;
+  quickAsk(msg);
+}
+
+// ─── AUTO REFRESH during market hours ────────────────────────────────────────
+function scheduleRefresh(){
+  const now=new Date();
+  const h=now.getHours(), m=now.getMinutes();
+  const isMarketHours=(h>9||(h===9&&m>=15))&&(h<15||(h===15&&m<=30));
+  if(isMarketHours && ACCESS_TOKEN) setInterval(fetchLivePrices, 5*60*1000); // every 5 min
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+// Pre-fill base prices as fallback
+holdings.forEach(h=>{livePrices[h.isin]=h.basePrice;liveChanges[h.isin]=0;});
+renderHoldings();
+updateSummary();
+generateAlerts();
+renderIntel();
+checkToken();
+scheduleRefresh();
+
+// Auto-generate daily signals on first open each day (non-blocking)
+(function(){
+  const today=new Date().toDateString();
+  const cached=localStorage.getItem('daily_signals_date');
+  if(cached!==today){
+    // Show a pulse on the tab to signal fresh analysis is ready
+    const tab=document.getElementById('signalsTab');
+    if(tab){tab.textContent='📡 Daily Signals 🔴';tab.style.borderColor='var(--red)';}
+    // Pre-run in background; result cached for when user clicks the tab
+    generateDailySignals(false).then(()=>{
+      if(tab){tab.textContent='📡 Daily Signals ✅';tab.style.borderColor='var(--green)';}
+    }).catch(()=>{});
+  } else {
+    const tab=document.getElementById('signalsTab');
+    if(tab) tab.textContent='📡 Daily Signals ✅';
+  }
+})();
+</script>
+</body>
+</html>
